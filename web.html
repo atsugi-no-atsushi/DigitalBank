@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<title>デジタル貯金箱</title>
+</head>
+<body>
+<h1>デジタル貯金箱</h1>
+<p>合計貯金額: <span id="total">0</span> 円</p>
+
+<div>
+<input id="amount" type="number" placeholder="500" />
+<button id="btn">貯金した！</button>
+</div>
+
+<script>
+const deviceId = 'demo-01';
+const apiBase = '[https://your-server.com](https://your-server.com/)';
+
+```
+async function postSavings(amount) {
+  const res = await fetch(apiBase + '/api/savings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ amount: Number(amount), deviceId })
+  });
+  return res.json();
+}
+
+document.getElementById('btn').addEventListener('click', async () => {
+  const amountInput = document.getElementById('amount');
+  const amount = amountInput.value || 500; // デフォルト500円
+  try {
+    const data = await postSavings(amount);
+    document.getElementById('total').textContent = data.total;
+    alert('貯金が反映されました！\\n貯金箱が光ってチャリン♪のはず！');
+    amountInput.value = '';
+  } catch (e) {
+    console.error(e);
+    alert('エラーが発生しました');
+  }
+});
+
+```
+
+</script>
+</body>
+</html>

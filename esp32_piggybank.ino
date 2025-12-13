@@ -1,6 +1,7 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
-#include <Adafruit_NeoPixel.h> // LEDテープ用（WS2812B想定）
+#include <Adafruit_NeoPixel.h>  // LEDテープ用（WS2812B想定）
+#include "driver/i2s.h"
 
 // ===== Wi-Fi設定 =====
 const char* ssid     = "YOUR_WIFI_SSID";
@@ -14,17 +15,17 @@ const char* serverUrl = "https://your-server.com/api/latest-savings?deviceId=dem
 #define LED_COUNT 16
 Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 
-// ===== I2S (MAX98357A) 設定例 =====
+// ===== I2S (MAX98357A) 設定 =====
 #define I2S_BCLK  26
 #define I2S_LRC   25
 #define I2S_DIN   22
 
-#include "driver/i2s.h"
-
 long lastCheckMs = 0;
-long checkIntervalMs = 5000; // 5秒ごとにサーバー確認
-int lastEventId = 0;         // 前回処理したイベントID
+long checkIntervalMs = 5000;  // 5秒ごとにサーバー確認
+int lastEventId = 0;          // 前回処理したイベントID
 
+
+// ===== WiFi 接続 =====
 void setupWiFi() {
   WiFi.begin(ssid, password);
   Serial.print("Connecting to WiFi");
@@ -35,8 +36,8 @@ void setupWiFi() {
   Serial.println("\nWiFi connected");
 }
 
+// ===== I2S セットアップ =====
 void setupI2S() {
-  // 超ざっくり設定（詳細はあとで詰めればOK）
   i2s_config_t i2s_config = {
     .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_TX),
     .sample_rate = 44100,
@@ -48,38 +49,40 @@ void setupI2S() {
     .dma_buf_len = 64,
     .use_apll = false
   };
+
   i2s_pin_config_t pin_config = {
     .bck_io_num = I2S_BCLK,
-    .ws_io_num = I2S_LRC,
+    .ws_io_num  = I2S_LRC,
     .data_out_num = I2S_DIN,
-    .data_in_num = I2S_PIN_NO_CHANGE
+    .data_in_num  = I2S_PIN_NO_CHANGE
   };
+
   i2s_driver_install(I2S_NUM_0, &i2s_config, 0, NULL);
   i2s_set_pin(I2S_NUM_0, &pin_config);
 }
 
+// ===== LED 初期化 =====
 void setupLeds() {
   strip.begin();
-  strip.show(); // 全消灯
+  strip.show();
 }
 
+// ===== チャリン音（ダミー） =====
 void playCharinSound() {
-  // 本気でやるならWAVデータ再生にする。
-  // MVPならとりあえず「簡易なピロリン音」でもOK。
-  // ここではダミーで「無音データ送るだけ」にしておく。
-  // 後でWAV再生ロジックを足すイメージ。
+  // 本気で WAV 再生をしたいなら後で実装する
 }
 
+// ===== LED アニメーション（花のように光る） =====
 void runLedAnimation() {
-  // かんたんな「花がふわっと光る」アニメの例
   for (int j = 0; j < 3; j++) {
     for (int b = 0; b < 255; b += 10) {
       for (int i = 0; i < LED_COUNT; i++) {
-        strip.setPixelColor(i, strip.Color(b, b, 0)); // 黄色っぽく
+        strip.setPixelColor(i, strip.Color(b, b, 0)); // 黄色
       }
       strip.show();
       delay(20);
     }
+
     for (int b = 255; b >= 0; b -= 10) {
       for (int i = 0; i < LED_COUNT; i++) {
         strip.setPixelColor(i, strip.Color(b, b, 0));
@@ -90,15 +93,16 @@ void runLedAnimation() {
   }
 }
 
+// ===== サーバー確認 =====
 void checkServer() {
   if (WiFi.status() != WL_CONNECTED) return;
 
   HTTPClient http;
   http.begin(serverUrl);
   int code = http.GET();
+
   if (code == 200) {
     String payload = http.getString();
-    // 超シンプルに「数字だけ返すAPI」を想定（例： "5"）
     int eventId = payload.toInt();
 
     if (eventId > lastEventId) {
@@ -107,12 +111,15 @@ void checkServer() {
       runLedAnimation();
       lastEventId = eventId;
     }
+
   } else {
     Serial.printf("HTTP error: %d\n", code);
   }
+
   http.end();
 }
 
+// ===== setup =====
 void setup() {
   Serial.begin(115200);
   setupWiFi();
@@ -120,6 +127,7 @@ void setup() {
   setupLeds();
 }
 
+// ===== loop =====
 void loop() {
   long now = millis();
   if (now - lastCheckMs > checkIntervalMs) {
