@@ -1,48 +1,130 @@
 <!doctype html>
 <html lang="ja">
 <head>
-<meta charset="utf-8" />
-<title>デジタル貯金箱</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>デジタル貯金箱</title>
+  <style>
+    /* Basic styling for a clean, mobile‑friendly interface */
+    body {
+      font-family: sans-serif;
+      background-color: #f7f7f7;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 2rem;
+      min-height: 100vh;
+    }
+    .container {
+      background: #ffffff;
+      padding: 1.5rem 2rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      max-width: 400px;
+      width: 100%;
+    }
+    h1 {
+      margin-top: 0;
+      font-size: 1.5rem;
+      text-align: center;
+    }
+    .total-display {
+      font-size: 1.2rem;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: bold;
+    }
+    input[type="number"] {
+      width: 100%;
+      padding: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      margin-bottom: 1rem;
+      box-sizing: border-box;
+    }
+    button {
+      width: 100%;
+      padding: 0.75rem;
+      background-color: #0070f3;
+      color: #ffffff;
+      border: none;
+      border-radius: 4px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #005bb5;
+    }
+    #message {
+      margin-top: 1rem;
+      text-align: center;
+      font-size: 0.9rem;
+    }
+  </style>
 </head>
 <body>
-<h1>デジタル貯金箱</h1>
-<p>合計貯金額: <span id="total">0</span> 円</p>
+  <div class="container">
+    <h1>デジタル貯金箱</h1>
+    <div class="total-display">合計貯金額: <span id="total">0</span> 円</div>
+    <label for="amount">貯金額 (円)</label>
+    <input id="amount" type="number" min="1" step="1" placeholder="金額を入力" />
+    <button id="btn">貯金する</button>
+    <p id="message"></p>
+  </div>
 
-<div>
-<input id="amount" type="number" placeholder="500" />
-<button id="btn">貯金した！</button>
-</div>
+  <script>
+    // Configure your device ID and backend API base URL here. In a
+    // production deployment these could be injected by the server or
+    // loaded from a configuration file.
+    const deviceId = 'demo-01';
+    const apiBase = 'https://your-server.com';
 
-<script>
-const deviceId = 'demo-01';
-const apiBase = '[https://your-server.com](https://your-server.com/)';
+    async function postSavings(amount) {
+      const response = await fetch(`${apiBase}/api/savings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: Number(amount), deviceId }),
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      return response.json();
+    }
 
-```
-async function postSavings(amount) {
-  const res = await fetch(apiBase + '/api/savings', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ amount: Number(amount), deviceId })
-  });
-  return res.json();
-}
-
-document.getElementById('btn').addEventListener('click', async () => {
-  const amountInput = document.getElementById('amount');
-  const amount = amountInput.value || 500; // デフォルト500円
-  try {
-    const data = await postSavings(amount);
-    document.getElementById('total').textContent = data.total;
-    alert('貯金が反映されました！\\n貯金箱が光ってチャリン♪のはず！');
-    amountInput.value = '';
-  } catch (e) {
-    console.error(e);
-    alert('エラーが発生しました');
-  }
-});
-
-```
-
-</script>
+    // Event handler for the save button
+    document.getElementById('btn').addEventListener('click', async () => {
+      const amountInput = document.getElementById('amount');
+      const messageEl = document.getElementById('message');
+      const totalEl = document.getElementById('total');
+      const value = amountInput.value.trim();
+      const amount = Number(value);
+      // Validate input
+      if (isNaN(amount) || amount <= 0) {
+        messageEl.textContent = '金額を正しく入力してください。';
+        messageEl.style.color = 'red';
+        return;
+      }
+      messageEl.textContent = '送信中…';
+      messageEl.style.color = '#333';
+      try {
+        const data = await postSavings(amount);
+        // Update total display based on server response
+        if (typeof data.total === 'number') {
+          totalEl.textContent = data.total;
+        }
+        messageEl.textContent = '貯金が反映されました！貯金箱が光ってチャリン♪のはず！';
+        messageEl.style.color = 'green';
+        amountInput.value = '';
+      } catch (err) {
+        console.error(err);
+        messageEl.textContent = 'エラーが発生しました。しばらくしてからお試しください。';
+        messageEl.style.color = 'red';
+      }
+    });
+  </script>
 </body>
 </html>
