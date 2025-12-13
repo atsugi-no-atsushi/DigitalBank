@@ -132,6 +132,8 @@ void loop() {
   long now = millis();
   if (now - lastCheckMs > checkIntervalMs) {
     checkServer();
-    lastCheckMs = now;
+    lastCheckMs = now
   }
 }
+
+//C³Œã‚ÌŒ©‚¦•û
