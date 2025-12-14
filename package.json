@@ -1,0 +1,28 @@
+{
+  "name": "digitalbank",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/atsugi-no-atsushi/DigitalBank.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/atsugi-no-atsushi/DigitalBank/issues"
+  },
+  "homepage": "https://github.com/atsugi-no-atsushi/DigitalBank#readme",
+  "dependencies": {
+    "express": "^5.2.1",
+    "firebase-admin": "^13.6.0",
+    "helmet": "^8.1.0",
+    "morgan": "^1.10.1"
+  }
+}

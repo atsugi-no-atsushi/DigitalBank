@@ -68,6 +68,29 @@ app.use(helmet());
 app.use(morgan('combined'));
 app.use(express.json());
 
+// Serve static files from the `public` directory so that the web frontend
+// (e.g. web.html) can be hosted by the same server. This helps avoid
+// CORS issues because the frontend and API share the same origin. Place
+// your web assets (HTML, CSS, JS) under a folder named `public` next
+// to this server.js file.
+app.use(express.static('public'));
+
+// CORS / preflight support: allow requests from any origin during local
+// development. In production, restrict the allowed origin to your
+// deployed frontend domain. This middleware also handles OPTIONS
+// requests by returning a 204 status, which prevents 404 errors when
+// browsers send a preflight request before POST/DELETE calls.
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') {
+    // End preflight requests quickly with no body.
+    return res.sendStatus(204);
+  }
+  next();
+});
+
 /**
  * POST /api/savings
  *

@@ -81,7 +81,9 @@
     // production deployment these could be injected by the server or
     // loaded from a configuration file.
     const deviceId = 'demo-01';
-    const apiBase = 'https://your-server.com';
+    // Set apiBase to your local server when testing locally (e.g. server.js running on http://localhost:3000).
+    // In production you can replace this with the deployed API URL.
+    const apiBase = 'http://localhost:3000';
 
     async function postSavings(amount) {
       const response = await fetch(`${apiBase}/api/savings`, {
