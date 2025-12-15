@@ -209,23 +209,36 @@ app.get('/api/device', async (req, res) => {
     }
 });
 
+//
+// POST /api/reset
+//
+// Resets a device's total and latestEventId back to zero. This endpoint
+// is primarily intended for development/testing so that users can
+// experiment without needing to manually edit Firestore. It takes
+// `deviceId` in the JSON body. If the device document does not
+// exist, it will be created with total = 0 and latestEventId = 0.
 app.post('/api/reset', async (req, res) => {
-    const { deviceId } = req.body ?? {};
-    if (!deviceId || typeof deviceId !== 'string' || !deviceId.trim()) {
-        return res.status(400).json({ error: 'deviceId is required' });
-    }
+  // Pull deviceId from the request body; provide a fallback of an empty
+  // object to avoid destructuring undefined.
+  const { deviceId } = req.body || {};
+  if (!deviceId || typeof deviceId !== 'string' || !deviceId.trim()) {
+    return res.status(400).json({ error: 'deviceId is required' });
+  }
 
-    try {
-        const id = deviceId.trim();
-        await devicesRef.doc(id).set(
-            { total: 0, latestEventId: 0, updatedAt: new Date() },
-            { merge: true }
-        );
-        return res.status(200).json({ ok: true, total: 0, latestEventId: 0 });
-    } catch (err) {
-        console.error('Error while processing /api/reset:', err);
-        return res.status(500).json({ error: 'Internal server error' });
-    }
+  try {
+    const id = deviceId.trim();
+    // Reset the device document. merge: true ensures other fields are
+    // preserved (if any) while overriding total and latestEventId. A
+    // timestamp is included for auditing purposes.
+    await devicesRef.doc(id).set(
+      { total: 0, latestEventId: 0, updatedAt: admin.firestore.FieldValue.serverTimestamp() },
+      { merge: true },
+    );
+    return res.status(200).json({ ok: true, total: 0, latestEventId: 0 });
+  } catch (err) {
+    console.error('Error while processing /api/reset:', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 
