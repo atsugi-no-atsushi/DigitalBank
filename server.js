@@ -178,6 +178,58 @@ app.get('/api/latest-savings', async (req, res) => {
   }
 });
 
+/**
+ * GET /api/device
+ * Query: deviceId
+ * Returns: { deviceId, total, latestEventId }
+ */
+app.get('/api/device', async (req, res) => {
+    const deviceId = req.query.deviceId;
+    if (!deviceId || typeof deviceId !== 'string' || !deviceId.trim()) {
+        return res.status(400).json({ error: 'deviceId query parameter is required' });
+    }
+
+    try {
+        const deviceDoc = await devicesRef.doc(deviceId).get();
+        const data = deviceDoc.exists ? deviceDoc.data() : {};
+
+        const total =
+            typeof data.total === 'number' ? data.total : 0;
+        const latestEventId =
+            typeof data.latestEventId === 'number' ? data.latestEventId : 0;
+
+        return res.json({
+            deviceId,
+            total,
+            latestEventId,
+        });
+    } catch (err) {
+        console.error('Error while processing /api/device:', err);
+        return res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.post('/api/reset', async (req, res) => {
+    const { deviceId } = req.body ?? {};
+    if (!deviceId || typeof deviceId !== 'string' || !deviceId.trim()) {
+        return res.status(400).json({ error: 'deviceId is required' });
+    }
+
+    try {
+        const id = deviceId.trim();
+        await devicesRef.doc(id).set(
+            { total: 0, latestEventId: 0, updatedAt: new Date() },
+            { merge: true }
+        );
+        return res.status(200).json({ ok: true, total: 0, latestEventId: 0 });
+    } catch (err) {
+        console.error('Error while processing /api/reset:', err);
+        return res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+
+
 // Catch-all for unrecognised routes.
 app.use((req, res) => {
   res.status(404).json({ error: 'Not found' });

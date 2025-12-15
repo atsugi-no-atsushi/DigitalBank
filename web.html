@@ -67,66 +67,94 @@
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>デジタル貯金箱</h1>
-    <div class="total-display">合計貯金額: <span id="total">0</span> 円</div>
-    <label for="amount">貯金額 (円)</label>
-    <input id="amount" type="number" min="1" step="1" placeholder="金額を入力" />
-    <button id="btn">貯金する</button>
-    <p id="message"></p>
-  </div>
+    <div class="container">
+        <h1>デジタル貯金箱</h1>
+        <div class="total-display">合計貯金額: <span id="total">0</span> 円</div>
+        <label for="amount">貯金額 (円)</label>
+        <input id="amount" type="number" min="1" step="1" placeholder="金額を入力" />
+        <button id="btn">貯金する</button>
+        <p id="message"></p>
+    </div>
 
-  <script>
-    // Configure your device ID and backend API base URL here. In a
-    // production deployment these could be injected by the server or
-    // loaded from a configuration file.
-    const deviceId = 'demo-01';
-    // Set apiBase to your local server when testing locally (e.g. server.js running on http://localhost:3000).
-    // In production you can replace this with the deployed API URL.
-    const apiBase = 'http://localhost:3000';
+    <script>
+        const deviceId = 'demo-01';
+        const apiBase = 'http://localhost:3000'; // B案なら '' でもOK
 
-    async function postSavings(amount) {
-      const response = await fetch(`${apiBase}/api/savings`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: Number(amount), deviceId }),
-      });
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-      return response.json();
-    }
-
-    // Event handler for the save button
-    document.getElementById('btn').addEventListener('click', async () => {
-      const amountInput = document.getElementById('amount');
-      const messageEl = document.getElementById('message');
-      const totalEl = document.getElementById('total');
-      const value = amountInput.value.trim();
-      const amount = Number(value);
-      // Validate input
-      if (isNaN(amount) || amount <= 0) {
-        messageEl.textContent = '金額を正しく入力してください。';
-        messageEl.style.color = 'red';
-        return;
-      }
-      messageEl.textContent = '送信中…';
-      messageEl.style.color = '#333';
-      try {
-        const data = await postSavings(amount);
-        // Update total display based on server response
-        if (typeof data.total === 'number') {
-          totalEl.textContent = data.total;
+        async function postSavings(amount) {
+            const response = await fetch(`${apiBase}/api/savings`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ amount: Number(amount), deviceId }),
+            });
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            return response.json();
         }
-        messageEl.textContent = '貯金が反映されました！貯金箱が光ってチャリン♪のはず！';
-        messageEl.style.color = 'green';
-        amountInput.value = '';
-      } catch (err) {
-        console.error(err);
-        messageEl.textContent = 'エラーが発生しました。しばらくしてからお試しください。';
-        messageEl.style.color = 'red';
-      }
-    });
-  </script>
+
+        // ★ ページ起動時用（グローバル）
+        async function fetchDeviceState() {
+            const res = await fetch(`${apiBase}/api/device?deviceId=${encodeURIComponent(deviceId)}`);
+            if (!res.ok) throw new Error('device state fetch failed');
+            return res.json();
+        }
+
+        // ページ起動時に合計金額を表示
+        window.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const state = await fetchDeviceState();
+                const totalEl = document.getElementById('total');
+                if (totalEl && typeof state.total === 'number') {
+                    totalEl.textContent = state.total;
+                }
+            } catch (err) {
+                console.error('Failed to fetch initial total:', err);
+            }
+        });
+
+        // ボタンクリック
+        document.getElementById('btn').addEventListener('click', async () => {
+            const amountInput = document.getElementById('amount');
+            const messageEl = document.getElementById('message');
+            const totalEl = document.getElementById('total');
+            const amount = Number(amountInput.value);
+
+            if (!Number.isFinite(amount) || amount <= 0) {
+                messageEl.textContent = '金額を正しく入力してください。';
+                messageEl.style.color = 'red';
+                return;
+            }
+
+            try {
+                const data = await postSavings(amount);
+                if (typeof data.total === 'number') {
+                    totalEl.textContent = data.total;
+                }
+                messageEl.textContent = '貯金が反映されました！';
+                messageEl.style.color = 'green';
+                amountInput.value = '';
+            } catch (err) {
+                console.error(err);
+                messageEl.textContent = 'エラーが発生しました。';
+                messageEl.style.color = 'red';
+            }
+        });
+        // ページ起動時に現在の合計金額を取得して表示
+        window.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const state = await fetchDeviceState();
+                const totalEl = document.getElementById('total');
+                if (totalEl && typeof state.total === 'number') {
+                    totalEl.textContent = state.total;
+                }
+            } catch (err) {
+                console.error('Failed to fetch initial total:', err);
+                // 取得に失敗してもUIは使えるように黙ってスルー
+            }
+        });
+    </script>
+
+  
+
 </body>
 </html>
