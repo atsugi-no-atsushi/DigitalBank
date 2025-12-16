@@ -98,9 +98,10 @@
     // production deployment these could be injected by the server or
     // loaded from a configuration file.
     const deviceId = 'demo-01';
-    // Set apiBase to your local server when testing locally (e.g. server.js running on http://localhost:3000).
-    // In production you can replace this with the deployed API URL.
-    const apiBase = 'http://localhost:3000';
+    // Use the same origin for API calls.
+    // When this page is served via ngrok or another reverse proxy, location.origin will be the base URL
+    // (e.g. https://xxxxxxxx.ngrok-free.dev). This avoids mixed‑content issues on mobile browsers.
+    const apiBase = location.origin;
 
     async function postSavings(amount) {
       const response = await fetch(`${apiBase}/api/savings`, {
@@ -179,8 +180,12 @@
       messageEl.style.color = '#333';
       try {
         const data = await resetDevice();
-        // Reset the total display to zero
-        totalEl.textContent = '0';
+        // Update the total display based on the API response
+        if (data && typeof data.total === 'number') {
+          totalEl.textContent = String(data.total);
+        } else {
+          totalEl.textContent = '0';
+        }
         messageEl.textContent = 'リセットしました（0円）';
         messageEl.style.color = 'green';
       } catch (err) {
